@@ -1,5 +1,4 @@
 {
-    "REPORT_DIR": "./reports",
     "REPORTS_DIR": "./reports",
     "LOG_DIR": "./log",
     "LOG_FILE": "./log/log.log",
