@@ -17,15 +17,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: BSFishy/pip-action@v1
-      with:
-        packages: |
-          python-dateutil
+#     - uses: BSFishy/pip-action@v1
+#       with:
+#         packages: |
+#           python-dateutil
     - uses: actions/checkout@v3
     - name: Set up Python 3.7
       uses: actions/setup-python@v3
       with:
         python-version: "3.7"
+        python-dateutil: "2.8.2"
     - name: Test with unit test
       run: python test.py
       working-directory: hm2
