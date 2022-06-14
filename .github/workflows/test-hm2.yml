@@ -28,5 +28,7 @@ jobs:
         python-version: "3.7"
         python-dateutil: "2.8.2"
     - name: Test with unit test
-      run: python test.py
+      run: |
+        pip install python-dateutil
+        python test.py
       working-directory: hm2
