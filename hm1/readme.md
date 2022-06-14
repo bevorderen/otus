@@ -1,4 +1,4 @@
 # Log Analyzer
-Run script: python log_analyzer_reduced.py --config config.json
+Run script: python log_analyzer.py --config config.json or python log_analyzer.py
 
 run tests: python tests.py

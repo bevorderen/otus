@@ -6,7 +6,7 @@
 #                     '$status $body_bytes_sent "$http_referer" '
 #                     '"$http_user_agent" "$http_x_forwarded_for" "$http_X_REQUEST_ID" "$http_X_RB_USER" '
 #                     '$request_time';
-
+import log_analyzer_reduced
 config = {
     "REPORTS_DIR": "./reports",
     "LOG_DIR": "./log",
@@ -18,7 +18,7 @@ config = {
 
 
 def main():
-    pass
+    log_analyzer_reduced.main(config)
 
 
 if __name__ == "__main__":

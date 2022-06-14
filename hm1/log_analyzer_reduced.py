@@ -8,7 +8,7 @@ import argparse
 import io
 from datetime import datetime
 from collections import namedtuple
-from log_analyzer import config as defaul_config
+import statistics
 
 
 DEFAULT_CONFIG_PATH = "./config.json"
@@ -74,23 +74,23 @@ def create_report(records, max_records):
             "time_sum": sum(intermediate_data[key]["times"]),
             "time_avg": sum(intermediate_data[key]["times"]) / len(intermediate_data[key]["times"]),
             "time_max": max(intermediate_data[key]["times"]),
-            "time_med": median(intermediate_data[key]["times"]),
+            "time_med": statistics.median(intermediate_data[key]["times"]),
             "time_perc": sum(intermediate_data[key]["times"]) / total_time * 100,
             "count_perc": intermediate_data[key]["records"] / total_records * 100
         } for key in intermediate_data
     ]
 
 
-def get_log_records(log_path, errors_limit=None):
+def get_log_records(log_path, parser, errors_limit=None):
     open_fn = gzip.open if is_gzip_file(log_path) else io.open
     errors = 0
     records = 0
     log_records = []
     with open_fn(log_path, mode='rb') as log_file:
-        for log_line in log_file.readlines():
+        for log_line in log_file:
             records += 1
             try:
-                log_records.append(parse_log_record(log_line))
+                log_records.append(parser(log_line))
             except UnicodeDecodeError:
                 errors += 1
 
@@ -105,13 +105,6 @@ def parse_log_record(log_line):
     href = decoded_line.split(" ")[7]
     request_time = decoded_line.split(" ")[-1]
     return href, request_time
-
-
-def median(values_list):
-    if not values_list:
-        return None
-
-    return sorted(values_list)[int(len(values_list)/2)]
 
 
 ####################################
@@ -139,17 +132,18 @@ def get_latest_log_info(files_dir):
         if not match:
             continue
 
-        if not latest_date:
-            lateset_path = f"{files_dir}/{filename}"
-            latest_date = datetime.strptime(
-                match.group("date"), "%Y%m%d"
-            ).date()
-        else:
+        try:
             possibly_date = datetime.strptime(
                 match.group("date"), "%Y%m%d").date()
-            if possibly_date > latest_date:
-                lateset_path = f"{files_dir}/{filename}",
+            if not latest_date:
+                lateset_path = f"{files_dir}/{filename}"
                 latest_date = possibly_date
+            else:
+                if possibly_date > latest_date:
+                    lateset_path = f"{files_dir}/{filename}",
+                    latest_date = possibly_date
+        except Exception as e:
+             logging.error("An error when parse date from file name")
 
     latest_file_info = DateNamedFileInfo(
         lateset_path,
@@ -173,7 +167,10 @@ def render_template(template_path, to, data):
 
 
 def main(config):
-    # resolving an actual log
+    if config_from_file:
+        config.update(config_from_file)
+    setup_logger(config.get('LOG_FILE'))
+
     latest_log_info = get_latest_log_info(config['LOGS_DIR'])
     if not latest_log_info:
         logging.info('Ooops. No log files yet')
@@ -191,7 +188,9 @@ def main(config):
     logging.info('Collecting data from "{}"'.format(
         os.path.normpath(latest_log_info.file_path)))
     log_records = get_log_records(
-        latest_log_info.file_path, config.get('ERRORS_LIMIT')
+        latest_log_info.file_path,
+        parse_log_record,
+        config.get('ERRORS_LIMIT')
     )
     report_data = create_report(log_records, config['MAX_REPORT_SIZE'])
 
@@ -201,6 +200,7 @@ def main(config):
         os.path.normpath(report_file_path)))
 
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -208,17 +208,30 @@ if __name__ == '__main__':
         help='Config file path',
         default=DEFAULT_CONFIG_PATH
     )
-
     args = parser.parse_args()
-    config = defaul_config
     try:
-        config.update(load_conf(args.config))
+        config = (load_conf(args.config))
     except (json.JSONDecodeError, FileNotFoundError):
         logging.exception(f"An error while parsing config file")
         sys.exit()
     setup_logger(config.get('LOG_FILE'))
-
+   
     try:
         main(config)
     except Exception as e:
         logging.exception("Somthing was wrong")
+else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--config',
+        help='Config file path',
+        default=DEFAULT_CONFIG_PATH
+    )
+    args = parser.parse_args()
+    try:
+        config = load_conf(args.config)
+    except (json.JSONDecodeError, FileNotFoundError):
+        logging.exception(f"An error while parsing config file")
+        sys.exit()
+
+    config_from_file = (load_conf(args.config))
