@@ -58,7 +58,7 @@ class Response:
             self.method = first_string
 
         request = urllib.parse.unquote(url)
-        self.path = request + "index.html" if request.endswith('/') else self.document_root + os.path.realpath(request)
+        self.path = self.document_root + request + "index.html" if request.endswith('/') else self.document_root + os.path.realpath(request)
 
         if "?" in self.path:
             self.path = self.path.split("?")[0]
