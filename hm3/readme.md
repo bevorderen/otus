@@ -4,6 +4,12 @@ cd hm3
 python httpd.py -p {port} -r {document root} - w {workers}
 ```
 
+## run test
+```
+cd hm3
+ab -n 50000 -c 100 -r http://localhost:80/httptest/dir2/
+```
+
 ## Test results:
 Server Software: OTUS
 Server Hostname: localhost
