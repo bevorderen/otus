@@ -234,4 +234,4 @@ else:
         logging.exception(f"An error while parsing config file")
         sys.exit()
 
-    config_from_file = (load_conf(args.config))
+    config_from_file = load_conf(args.config)
