@@ -9,9 +9,11 @@ import io
 from datetime import datetime
 from collections import namedtuple
 import statistics
+import itertools
+import copy
 
 
-DEFAULT_CONFIG_PATH = "./config.json"
+DEFAULT_CONFIG_PATH = ""
 REPORT_TEMPLATE_PATH = "./reports/report.html"
 LOG_RECORD_RE = re.compile(
     '^'
@@ -53,9 +55,6 @@ def create_report(records, max_records):
     for href, response_time in records:
         total_records += 1
         total_time += float(response_time)
-        if total_records == max_records:
-            logging.info('Row processing limit reached')
-            break
         if href in intermediate_data:
             intermediate_data[href]["records"] += 1
             intermediate_data[href]["times"].append(float(response_time))
@@ -67,6 +66,7 @@ def create_report(records, max_records):
                 }
             })
 
+    intermediate_data = dict(itertools.islice(intermediate_data.items(), max_records))
     return [
         {
             "url": key,
@@ -135,15 +135,13 @@ def get_latest_log_info(files_dir):
         try:
             possibly_date = datetime.strptime(
                 match.group("date"), "%Y%m%d").date()
-            if not latest_date:
-                lateset_path = f"{files_dir}/{filename}"
-                latest_date = possibly_date
-            else:
-                if possibly_date > latest_date:
-                    lateset_path = f"{files_dir}/{filename}",
-                    latest_date = possibly_date
         except Exception as e:
-             logging.error("An error when parse date from file name")
+            possibly_date = None
+            logging.error("An error when parse date from file name")
+        
+        if not latest_date or (possibly_date and possibly_date > latest_date):
+            lateset_path = f"{files_dir}/{filename}"
+            latest_date = possibly_date
 
     latest_file_info = DateNamedFileInfo(
         lateset_path,
@@ -199,9 +197,7 @@ def main(config):
     logging.info('Report saved to {}'.format(
         os.path.normpath(report_file_path)))
 
-
-
-if __name__ == '__main__':
+def load_user_config():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--config',
@@ -209,29 +205,25 @@ if __name__ == '__main__':
         default=DEFAULT_CONFIG_PATH
     )
     args = parser.parse_args()
-    try:
-        config = (load_conf(args.config))
-    except (json.JSONDecodeError, FileNotFoundError):
-        logging.exception(f"An error while parsing config file")
-        sys.exit()
-    setup_logger(config.get('LOG_FILE'))
-   
-    try:
-        main(config)
-    except Exception as e:
-        logging.exception("Somthing was wrong")
-else:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--config',
-        help='Config file path',
-        default=DEFAULT_CONFIG_PATH
-    )
-    args = parser.parse_args()
+    
+    if not args.config:
+        return
+    
     try:
         config = load_conf(args.config)
     except (json.JSONDecodeError, FileNotFoundError):
         logging.exception(f"An error while parsing config file")
         sys.exit()
+    return config
 
-    config_from_file = load_conf(args.config)
+
+if __name__ == '__main__':
+    config = load_user_config()
+    setup_logger(config.get('LOG_FILE'))
+   
+    try:
+        main(copy.deepcopy(config))
+    except Exception as e:
+        logging.exception("Somthing was wrong")
+else:
+    config_from_file = load_user_config()
