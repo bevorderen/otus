@@ -6,12 +6,9 @@ import json
 import datetime
 import logging
 import hashlib
-from multiprocessing.sharedctypes import Value
-from tkinter import N
 import uuid
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from dateutil.relativedelta import relativedelta
 import re
 from scoring import get_interests, get_score
 
@@ -138,10 +135,11 @@ class BirthDayField(DateField):
 
         super().validate(value)
 
-        if self._parse_date(value) + relativedelta(years=70) < datetime.datetime.now():
+        parsed_date = self._parse_date(value)
+        if parsed_date.replace(parsed_date.year + 70) < datetime.datetime.now():
             raise ValueError("Value must be less then 70 years!")
 
-        if self._parse_date(value) > datetime.datetime.now():
+        if parsed_date > datetime.datetime.now():
             raise ValueError("Value must be less then current time!")
 
     def is_empty(self, value):
@@ -293,6 +291,33 @@ def check_auth(request):
     return False
 
 
+def answer_handler(request, store, context, is_admin):
+    if isinstance(request, ClientsInterestsRequest):
+        context["nclients"] = len(request.client_ids)
+        return {str(cid):  get_interests(store=store, cid=cid) for cid in request.client_ids}
+
+    if isinstance(request, OnlineScoreRequest):
+        filled_field_names = [
+            field_name
+            for field_name in request.fields.keys()
+            # fix gender value = 0 problem
+            if getattr(request, field_name, None) or getattr(request, field_name, None) == 0
+        ]
+        context["has"] = filled_field_names
+
+        if is_admin:
+            result = 42
+        else:
+            result = get_score(
+                store=store,
+                phone=request.phone, email=request.email,
+                birthday=request.birthday, gender=request.gender,
+                first_name=request.first_name, last_name=request.last_name
+            )
+
+        return {"score": result}
+
+
 def method_handler(request, ctx, store):
     handlers = {
         "online_score": OnlineScoreRequest,
@@ -319,7 +344,7 @@ def method_handler(request, ctx, store):
     if handler.errors:
         return handler.errors, INVALID_REQUEST
 
-    return handler.return_answer(store, ctx, methodrequest.is_admin), OK
+    return answer_handler(request=handler, store=store, context=ctx, is_admin=methodrequest.is_admin), OK
 
 
 class MainHTTPHandler(BaseHTTPRequestHandler):
