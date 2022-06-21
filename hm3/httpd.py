@@ -42,6 +42,7 @@ class Response:
         self.method = None
         self.body = b''
         self.protocol_version = "HTTP/1.1"
+        self.response = b''
 
     def parse_data(self):
         try:
@@ -111,7 +112,7 @@ class Response:
         else:
             self.status = FORBIDDEN
 
-    def send(self, connection):
+    def prepare_response(self):
         self.response_headers['Connection'] = 'close'
         headers = "\r\n".join(
             f"{key}: {value}" for key, value in self.response_headers.items()
@@ -124,23 +125,18 @@ class Response:
         response += headers
         response = response.encode("utf-8")
         body = self.body if self.status == OK else b''
-
-        try:
-            connection.sendall(response + body)
-            connection.close()
-        except socket.error as e:
-            logging.error('%s: socket error %s ' % (self.worker, e))
+        self.response = response + body
+       
 
 
-class Worker:
+class Worker(threading.Thread):
     def __init__(self, host, port, server_socket, document_root):
+        super().__init__()
+        self.daemon = True
         self.host = host
         self.port = port
         self.server_socket = server_socket
-        self.worker_name = ''.join(random.choices(
-            string.ascii_uppercase + string.digits, k=5))
-        self.tread = threading.Thread(
-            target=self.listen, name=self.worker_name)
+        self.worker_name = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
         self.document_root = document_root
 
     def read_data(self, client_connection):
@@ -152,7 +148,19 @@ class Worker:
                 break
         return raw_data
 
-    def listen(self):
+    def send_response(self, response, connection):
+        try:
+            while len(response) > 1024:
+                connection.sendall(response[0:1024])
+                response = response[1024:]
+            if response:
+                connection.sendall(response)
+        except socket.error as e:
+            logging.error('%s: socket error %s ' % (self.worker_name, e))
+        connection.close()
+        
+
+    def run(self):
         while True:
             try:
                 client_connection, client_address = self.server_socket.accept()
@@ -164,7 +172,8 @@ class Worker:
                 response = Response(
                     raw_data=data, document_root=self.document_root)
                 response.handle()
-                response.send(client_connection)
+                response.prepare_response()
+                self.send_response(response=response.response, connection=client_connection)
 
 
 class HTTPServer:
@@ -187,12 +196,12 @@ class HTTPServer:
                 self.server_socket,
                 self.document_root
             )
-            worker.tread.daemon = True
-            worker.tread.start()
-            self.tread_poll.append(worker.tread)
+            worker.start()
+            self.tread_poll.append(worker)
 
         while True:
             pass
+
 
 
 if __name__ == "__main__":
