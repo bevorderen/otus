@@ -6,11 +6,13 @@ import json
 import datetime
 import logging
 import hashlib
+from tkinter import N
 import uuid
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import re
 from scoring import get_interests, get_score
+from store import Store
 
 SALT = "Otus"
 ADMIN_LOGIN = "admin"
@@ -44,7 +46,7 @@ class Field(abc.ABC):
         self.nullable = nullable
 
     def validate(self, value):
-        if self.required and not value:
+        if self.required and value != 0 and not value:
             raise ValueError("Field is required")
 
         if not self.nullable and not value:
@@ -57,7 +59,7 @@ class Field(abc.ABC):
 
 class CharField(Field):
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -80,7 +82,7 @@ class ArgumentsField(Field):
 
 class EmailField(CharField):
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -90,7 +92,7 @@ class EmailField(CharField):
 
 class PhoneField(Field):
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -114,7 +116,7 @@ class DateField(CharField):
         return datetime.datetime.strptime(value, "%d.%m.%Y")
 
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -130,7 +132,7 @@ class DateField(CharField):
 
 class BirthDayField(DateField):
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -148,7 +150,7 @@ class BirthDayField(DateField):
 
 class GenderField(Field):
     def validate(self, value):
-        if self.is_empty(value):
+        if self.is_empty(value) and self.required == False:
             return
 
         super().validate(value)
@@ -159,7 +161,7 @@ class GenderField(Field):
             raise ValueError("Gender must be 0, 1 or 2")
 
     def is_empty(self, value):
-        return not value
+        return not value and value != 0
 
 
 class ClientIDsField(Field):
@@ -351,8 +353,8 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
     router = {
         "method": method_handler
     }
-    store = None
-
+    store = Store()
+    
     def get_request_id(self, headers):
         return headers.get('HTTP_X_REQUEST_ID', uuid.uuid4().hex)
 
@@ -373,7 +375,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
             if path in self.router:
                 try:
                     response, code = self.router[path](
-                        {"body": request, "headers": self.headers}, context, self.store)
+                        {"body": request, "headers": self.headers}, context, store=self.store)
                 except Exception as e:
                     logging.exception("Unexpected error: %s" % e)
                     code = INTERNAL_ERROR

@@ -2,9 +2,14 @@ import hashlib
 import datetime
 import functools
 import unittest
+from pathlib import Path
+import os
+import sys
 
+path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
+sys.path.insert(1, path)
 import api
-
+from store import Store
 
 def cases(cases):
     def decorator(f):
@@ -21,7 +26,7 @@ class TestSuite(unittest.TestCase):
     def setUp(self):
         self.context = {}
         self.headers = {}
-        self.settings = {}
+        self.settings = Store()
 
     def get_response(self, request):
         return api.method_handler({"body": request, "headers": self.headers}, self.context, self.settings)
