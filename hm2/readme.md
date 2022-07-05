@@ -5,5 +5,6 @@ python api.py
 ```
 ## run tests: 
 ```
-python test.py
+python tests/integration/test.py
+python tests/unit/unit.py
 ```
