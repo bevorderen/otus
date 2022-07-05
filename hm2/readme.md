@@ -1,3 +1,7 @@
+Necessary run redis on localhost:6379 and install package:
+```
+pip3 install redis
+```
 ## run server: 
 ```
 cd hm2
