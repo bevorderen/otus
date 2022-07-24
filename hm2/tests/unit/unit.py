@@ -2,30 +2,13 @@ from pathlib import Path
 import sys
 import os
 import unittest
-import functools
 path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
 sys.path.insert(1, path)
 import api
+from tests.integration.test import cases
 
 
-def cases(cases):
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*args):
-            i = 1
-            for c in cases:
-                new_args = args + (c if isinstance(c, tuple) else (c,))
-                try:
-                    f(*new_args)
-                except:
-                    print(f"Something went wrong in i={i} line")
-                    raise
-                i += 1
-        return wrapper
-    return decorator
-
-
-class TestFields(unittest.TestCase):
+class TestCharField(unittest.TestCase):
     @cases([
         (42, TypeError, "Value must be str type!"),
         ([42], TypeError, "Value must be str type!"),
@@ -43,6 +26,8 @@ class TestFields(unittest.TestCase):
     def test_char_field__positive(self, value):
         api.CharField(required=True, nullable=False).validate(value)
 
+
+class TestArgumentField(unittest.TestCase):
     @cases([
         (42, TypeError, "Value must be dict type!"),
         ([42], TypeError, "Value must be dict type!"),
@@ -59,6 +44,8 @@ class TestFields(unittest.TestCase):
     def test_argument_field__positive(self, value):
         api.ArgumentsField(required=True, nullable=False).validate(value)
 
+
+class TestEmailField(unittest.TestCase):
     @cases([
         ("testmail", ValueError, "Email must contain @!"),
         ([42], TypeError, "Value must be str type!"),
@@ -75,6 +62,8 @@ class TestFields(unittest.TestCase):
     def test_email_field__positive(self, value):
         api.EmailField(required=True, nullable=False).validate(value)
 
+
+class TestPhoneField(unittest.TestCase):
     @cases([
         ([1, 2, 3], TypeError, "Value must be str or int type!"),
         ("723456789", ValueError, "Value must be 11 characters!"),
@@ -92,6 +81,8 @@ class TestFields(unittest.TestCase):
     def test_phone_field__positive(self, value):
         api.PhoneField(required=True, nullable=False).validate(value)
 
+
+class TestDateField(unittest.TestCase):
     @cases([
         ("111.111.1111", ValueError, "Value must implement pattern XX.XX.XXXX!"),
         ("00.00.0000", ValueError, "Invalid date!"),
@@ -108,6 +99,8 @@ class TestFields(unittest.TestCase):
     def test_date_field__positive(self, value):
         api.DateField(required=True, nullable=False).validate(value)
 
+
+class TestBirthDayField(unittest.TestCase):
     @cases([
         ("111.111.1111", ValueError, "Value must implement pattern XX.XX.XXXX!"),
         ("11.11.1900", ValueError, "Value must be less then 70 years!"),
@@ -126,6 +119,8 @@ class TestFields(unittest.TestCase):
     def test_birth_day_field__positive(self, value):
         api.BirthDayField(required=True, nullable=False).validate(value)
 
+
+class TestGenderField(unittest.TestCase):
     @cases([
         ("1", TypeError, "Value must be int type!"),
         (4, ValueError, "Gender must be 0, 1 or 2"),
@@ -142,6 +137,8 @@ class TestFields(unittest.TestCase):
     def test_gender_field__positive(self, value):
         api.GenderField(required=True, nullable=False).validate(value)
 
+
+class TestCleintIDsField(unittest.TestCase):
     @cases([
         ({"42": "42"}, TypeError, "Value must be list type!"),
         ([1, 2, "3"], ValueError, "Every elements in list must be int type!"),

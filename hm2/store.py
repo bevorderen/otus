@@ -11,7 +11,7 @@ class Store:
 
     def connect(self):
         self.redis = redis.Redis(
-            db=0, 
+            db=0,
             connection_pool=None,
             host=self.host,
             port=self.port,
@@ -28,25 +28,18 @@ class Store:
             try:
                 value = self.redis.get(key)
                 return value.decode("utf-8")
-            except ConnectionError:
+            except redis.exceptions.ConnectionError:
                 self.connect()
                 retries += 1
             except (AttributeError, ValueError):
                 return
-        raise ConnectionError
+        raise redis.exceptions.ConnectionError
 
     def cache_get(self, key):
-        retries = 0
-        while retries <= self.retries:
-            try:
-                value = self.redis.get(key)
-                return value.decode("utf-8")
-            except ConnectionError:
-                self.connect()
-                retries += 1
-            except (AttributeError, ValueError):
-                return
-        return -1
+        try:
+            return self.get(key=key)
+        except redis.exceptions.ConnectionError:
+            return None
 
     def cache_set(self, key, value, timeout):
         self.set(key, value, timeout)

@@ -6,7 +6,6 @@ import json
 import datetime
 import logging
 import hashlib
-from tkinter import N
 import uuid
 from optparse import OptionParser
 from http.server import HTTPServer, BaseHTTPRequestHandler
