@@ -33,7 +33,7 @@ class Store:
                 retries += 1
             except (AttributeError, ValueError):
                 return
-        raise redis.exceptions.ConnectionError
+        raise redis.exceptions.ConnectionError()
 
     def cache_get(self, key):
         try:
