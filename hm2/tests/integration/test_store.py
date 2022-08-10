@@ -1,21 +1,25 @@
 from time import sleep
 import unittest
-from pathlib import Path
-import os
-import sys
+
 import hashlib
 import datetime
 import json
 
-path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
-sys.path.insert(1, path)
+
 from store import Store
 from tests.integration.test import cases
 import api
+from os import environ
 
 class TestStore(unittest.TestCase):
     def setUp(self):
-        self.store = Store()
+        try:
+            host = environ["host"]
+            port = environ["port"]
+        except KeyError:
+            self.skipTest("Don't have environ['host'] or environ['port'] for store")
+            
+        self.store = Store(host=host, port=port)
 
     def test_set_simlpe_value(self):
         key = "simple key"

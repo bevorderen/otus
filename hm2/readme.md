@@ -8,7 +8,15 @@ pip 3 install mock
 cd hm2
 python api.py
 ```
-## run tests: 
+## run test directory
+```
+export host="{host with redis}"
+export host="{port with redis}"
+python -m unittest discover tests.integration
+python -m unittest discover tests.unit
+```
+
+## run tests ony by one: 
 ```
 python tests/integration/test.py
 python tests/unit/unit.py

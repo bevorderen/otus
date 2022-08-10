@@ -24,7 +24,7 @@ class TestCharField(unittest.TestCase):
         ("42"),
     ])
     def test_char_field__positive(self, value):
-        api.CharField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.CharField(required=True, nullable=False).validate(value), None)
 
 
 class TestArgumentField(unittest.TestCase):
@@ -42,7 +42,7 @@ class TestArgumentField(unittest.TestCase):
         ({"42": "42"}),
     ])
     def test_argument_field__positive(self, value):
-        api.ArgumentsField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.ArgumentsField(required=True, nullable=False).validate(value), None)
 
 
 class TestEmailField(unittest.TestCase):
@@ -60,7 +60,7 @@ class TestEmailField(unittest.TestCase):
         ("test@mail.ru"),
     ])
     def test_email_field__positive(self, value):
-        api.EmailField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.EmailField(required=True, nullable=False).validate(value), None)
 
 
 class TestPhoneField(unittest.TestCase):
@@ -79,7 +79,7 @@ class TestPhoneField(unittest.TestCase):
         ("79998887766"),
     ])
     def test_phone_field__positive(self, value):
-        api.PhoneField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.PhoneField(required=True, nullable=False).validate(value), None)
 
 
 class TestDateField(unittest.TestCase):
@@ -97,7 +97,7 @@ class TestDateField(unittest.TestCase):
         ("28.06.2022"),
     ])
     def test_date_field__positive(self, value):
-        api.DateField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.DateField(required=True, nullable=False).validate(value), None)
 
 
 class TestBirthDayField(unittest.TestCase):
@@ -117,7 +117,7 @@ class TestBirthDayField(unittest.TestCase):
         ("28.06.2022"),
     ])
     def test_birth_day_field__positive(self, value):
-        api.BirthDayField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.BirthDayField(required=True, nullable=False).validate(value), None)
 
 
 class TestGenderField(unittest.TestCase):
@@ -135,7 +135,7 @@ class TestGenderField(unittest.TestCase):
         (1),
     ])
     def test_gender_field__positive(self, value):
-        api.GenderField(required=True, nullable=False).validate(value)
+        self.assertEqual(api.GenderField(required=True, nullable=False).validate(value), None)
 
 
 class TestCleintIDsField(unittest.TestCase):
@@ -153,7 +153,7 @@ class TestCleintIDsField(unittest.TestCase):
         ([1, 2]),
     ])
     def test_client_ids_field__positive(self, value):
-        api.ClientIDsField(required=True, nullable=True).validate(value)
+        self.assertEqual(api.ClientIDsField(required=True, nullable=True).validate(value), None)
 
 
 if __name__ == "__main__":

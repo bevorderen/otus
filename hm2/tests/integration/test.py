@@ -2,12 +2,7 @@ import hashlib
 import datetime
 import functools
 import unittest
-from pathlib import Path
-import os
-import sys
 
-path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
-sys.path.insert(1, path)
 import api
 from store import Store
 
