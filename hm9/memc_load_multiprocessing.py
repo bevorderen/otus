@@ -63,7 +63,7 @@ class Worker(Process):
             new_chunk_dict = {k: v for k, v in chunk_dict if k in bad_keys}
             bad_keys = self.client.set_multi(new_chunk_dict)
             current_try = - 1
-            time.sleep(DELAY*current_try)
+            time.sleep(DELAY * current_try)
 
         if bad_keys:
             logging.debug(f"Have bad keys size = {len(bad_keys)}. They skipped")
@@ -96,6 +96,7 @@ class Worker(Process):
 
     def stop(self):
         self.queue.put(SENTINEL)
+
 
 def dot_rename(path):
     head, fn = os.path.split(path)
@@ -173,10 +174,9 @@ def main(options):
                 else:
                     logging.error("High error rate (%s > %s). Failed load" % (err_rate, NORMAL_ERR_RATE))
 
-            # dot_rename(fn)
         finally:
             fd.close()
-        # dot_rename(fn)
+            dot_rename(fn)
     for worker in workers.values():
         worker.stop()
 
