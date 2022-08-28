@@ -60,39 +60,38 @@ class Worker(Process):
         bad_keys = self.client.set_multi(chunk_dict)
         current_try = RETRIES
         while bad_keys and current_try:
-            new_chunk_dict = {k: v for k, v in chunk_dict if k in bad_keys}
+            new_chunk_dict = {k: v for k, v in chunk_dict.items() if k in bad_keys}
             bad_keys = self.client.set_multi(new_chunk_dict)
-            current_try = - 1
+            current_try -= 1
             time.sleep(DELAY * current_try)
 
         if bad_keys:
             logging.debug(f"Have bad keys size = {len(bad_keys)}. They skipped")
 
-        def run(self) -> None:
-            end = False
-            chunk = []
+    def run(self) -> None:
+        end = False
+        chunk = []
 
-            while end:
-                try:
-                    task = self.queue.get(timeout=QUEUE_TIMEOUT)
-                except Empty:
-                    continue
+        while not end:
+            try:
+                task = self.queue.get(timeout=QUEUE_TIMEOUT)
+            except Empty:
+                continue
+            is_end_file = task == END_FILE
+            end = task == SENTINEL
 
-                is_end_file = task == END_FILE
-                end = task == SENTINEL
+            if not (is_end_file or end):
+                chunk.append(task)
 
-                if not (is_end_file or end):
-                    chunk.append(task)
-
-                if len(chunk) == CHUNK_SIZE or is_end_file:
-                    self.set_multi(chunk)
-                    chunk = []
-
-                if is_end_file:
-                    logging.debug("end file")
-
-            if chunk:
+            if len(chunk) == CHUNK_SIZE or is_end_file:
                 self.set_multi(chunk)
+                chunk = []
+
+            if is_end_file:
+                logging.debug("end file")
+
+        if chunk:
+            self.set_multi(chunk)
 
     def stop(self):
         self.queue.put(SENTINEL)
